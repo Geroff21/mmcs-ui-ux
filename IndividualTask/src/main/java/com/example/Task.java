@@ -54,15 +54,24 @@ public class Task implements Serializable {
     public void setCompleted(boolean completed) { this.completed = completed; }
 
     public boolean isCompleted() { return completed;}
-    public boolean isCompletedOnTime() { return completed && deadline.compareTo(completionDate) >= 0; }
+    public boolean isCompletedOnTime() { 
+
+        boolean flag = false;
+
+        if (completionDate != null && deadline != null) {
+            flag = deadline.compareTo(completionDate) >= 0; 
+        }
+
+        return completed && flag;
+    }
 
 
     @Override
     public String toString() {
-        String res = name + " - Deadline: " + deadline;
+        String res = name + " | Срок выполнения: " + deadline;
 
-        if (completed) {
-            res += " Date of compl: " + this.completionDate + " Grade: " + this.grade;
+        if (completed && this.grade >= 0 && this.completionDate != null ) {
+            res += " | Дата выполнения: " + this.completionDate + " | Оценка: " + this.grade;
         }
         
         return res;

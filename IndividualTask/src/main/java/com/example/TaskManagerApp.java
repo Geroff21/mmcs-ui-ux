@@ -221,11 +221,26 @@ public class TaskManagerApp extends Application {
             if (completedCheckBox.isSelected()) {
                 task.setCompletionDate(completionDatePicker.getValue());
                 task.setGrade(Double.parseDouble(gradeTextField.getText()));
+
+                if (descriptionTextArea.getText().equals("") ) {
+                    return;
+                }
+    
+                if (commentTextField.getText().equals("") ) {
+                    return;
+                }
+    
+                if (gradeTextField.getText().equals("") ) {
+                    return;
+                }
+
+
             } else {
                 task.setCompletionDate(null);
                 task.setGrade(0.0);
                 task.setComment("");
             }
+
             saveTaskManager();
             taskListView.refresh();
             detailsStage.close();
