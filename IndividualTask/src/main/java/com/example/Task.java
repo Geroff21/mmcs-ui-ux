@@ -12,14 +12,16 @@ public class Task implements Serializable {
     private String comment;
     private LocalDate completionDate;
     private double grade;
+    private double maxGrade;
 
-    public Task(String name, LocalDate deadline, String description) {
+    public Task(String name, LocalDate deadline, double maxGrade, String description) {
         this.name = name;
         this.deadline = deadline;
         this.description = description;
         this.completed = false;
         this.comment = "";
         this.completionDate = null;
+        this.maxGrade = maxGrade;
         this.grade = 0.0;
     }
 
@@ -32,6 +34,10 @@ public class Task implements Serializable {
     //Grade
     public double getGrade() { return grade; }
     public void setGrade(double grade) { this.grade = grade; }
+
+    //MaxGrade
+    public double getMaxGrade() { return maxGrade; }
+    public void setMaxGrade(double maxGrade) { this.maxGrade = maxGrade; }
 
     //Deadline
     public LocalDate getDeadline() { return deadline; }
@@ -71,7 +77,12 @@ public class Task implements Serializable {
         String res = name + " | Срок выполнения: " + deadline;
 
         if (completed && this.grade >= 0 && this.completionDate != null ) {
-            res += " | Дата выполнения: " + this.completionDate + " | Оценка: " + this.grade;
+            res += " | Дата выполнения: " + this.completionDate + " | Оценка: " + this.grade; 
+
+            if (this.maxGrade >= 0) {
+                res += " / " + this.maxGrade;
+            } 
+
         }
         
         return res;

@@ -22,8 +22,10 @@ public class TaskManagerApp extends Application {
     private TaskManager taskManager;
     private ListView<Task> taskListView;
     private TextField nameTextField;
+    private TextField maxGradeTextField;
     private DatePicker deadlineDatePicker;
     private TextArea descriptionTextArea;
+    private Label messageTextField;
     private Label taskDescriptionLabel;
 
     public static void main(String[] args) {
@@ -44,19 +46,35 @@ public class TaskManagerApp extends Application {
         nameTextField = new TextField();
         nameTextField.setPromptText("Имя задания");
 
-        // Task deadline
-        deadlineDatePicker = new DatePicker();
-        deadlineDatePicker.setPromptText("Срок выполнения");
-
         // Task description
         descriptionTextArea = new TextArea();
+        descriptionTextArea.setPrefHeight(100);
         descriptionTextArea.setPromptText("Описание задания");
         taskDescriptionLabel = new Label();
 
-        Button addButton = new Button("Добавить занятие");
+        // Task deadline
+        deadlineDatePicker = new DatePicker();
+        deadlineDatePicker.setPrefWidth(240);
+        deadlineDatePicker.setMaxWidth(240);
+        deadlineDatePicker.setPromptText("Срок выполнения");
+
+        // Task maxGrade
+        maxGradeTextField = new TextField();
+        maxGradeTextField.setPrefWidth(240);
+        maxGradeTextField.setMaxWidth(240);
+        maxGradeTextField.setPromptText("Максимальная оценка");
+
+        // Task errorField
+        messageTextField = new Label();
+
+        Button addButton = new Button("Добавить задание");
+        addButton.setPrefWidth(117);
+        addButton.setMaxWidth(117);
         addButton.setOnAction(e -> addTask());
 
-        Button removeButton = new Button("Удалить занятие");
+        Button removeButton = new Button("Удалить задание");
+        removeButton.setPrefWidth(118);
+        removeButton.setMaxWidth(118);
         removeButton.setOnAction(e -> removeTask());
 
         HBox buttons = new HBox(5);
@@ -76,19 +94,19 @@ public class TaskManagerApp extends Application {
                     setText(task.toString());
                     if (task.isCompleted()) {
                         if (task.isCompletedOnTime()) {
-                            setStyle("-fx-background-color: green;");
+                            setStyle("-fx-background-color: #8AD877; -fx-font-size: 14;");
                         }
                         else {
-                            setStyle("-fx-background-color: red;");
+                            setStyle("-fx-background-color: #D83C37; -fx-font-size: 14;");
                         }
 
                     } else {
-                        setStyle("-fx-background-color: gray;");
+                        setStyle("-fx-background-color: #D3D3D3; -fx-font-size: 14;");
                     }
                 }
             }
         });
-
+        
         taskListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Task selectedTask = taskListView.getSelectionModel().getSelectedItem();
@@ -96,28 +114,50 @@ public class TaskManagerApp extends Application {
                     showTaskDetails(selectedTask);
                 }
             }
+            if (event.getClickCount() == 1) {
+                messageTextField.setText("");
+            }
         });
 
-        taskDetails.getChildren().addAll(nameTextField, deadlineDatePicker, descriptionTextArea, buttons, taskDescriptionLabel);
+        
+        taskDetails.getChildren().addAll(nameTextField, descriptionTextArea, deadlineDatePicker, maxGradeTextField, buttons, messageTextField);
         root.setCenter(taskListView);
         root.setBottom(taskDetails);
 
-        primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setScene(new Scene(root, 800, 550));
         primaryStage.setTitle("Manager");
         primaryStage.show();
     }
 
     private void addTask() {
+
         String name = nameTextField.getText();
         LocalDate deadline = deadlineDatePicker.getValue();
+        double maxGrade = maxGradeTextField.getText() == "" ? -1.0 : maxGradeTextField.getText().matches("((-|\\\\+)?[0-9]+(\\\\.[0-9]+)?)+") ? Double.parseDouble(maxGradeTextField.getText()): -1.0;
         String description = descriptionTextArea.getText();
 
-        if (name.isEmpty() || deadline == null) {
+        messageTextField.setStyle("-fx-text-fill: red;");
+
+        if (name.isEmpty()) {
+            messageTextField.setText("Ошибка! Не введено имя задания");
             return;
         }
 
-        Task task = new Task(name, deadline, description);
+        if (deadline == null) {
+            messageTextField.setText("Ошибка! Не введен срок выполнения задания");
+            return;
+        }
+
+        if (maxGrade < 0.0) {
+            messageTextField.setText("Ошибка! Неверно введена максимальная оценка");
+            return;
+        }
+
+        messageTextField.setStyle("-fx-text-fill: green;");
+
+        Task task = new Task(name, deadline, maxGrade, description);
         taskManager.addTask(task);
+        messageTextField.setText("Занятие успешно добавлено!");
         saveTaskManager();
         taskListView.getItems().add(task);
         clearFields();
@@ -162,6 +202,7 @@ public class TaskManagerApp extends Application {
         nameTextField.clear();
         deadlineDatePicker.setValue(null);
         descriptionTextArea.clear();
+        maxGradeTextField.clear();
         taskDescriptionLabel.setText("");
     }
 
@@ -174,10 +215,18 @@ public class TaskManagerApp extends Application {
         detailsBox.setPadding(new Insets(10));
     
         TextField nameTextField = new TextField(task.getName());
+        TextField maxGradeTextField = new TextField(task.getMaxGrade() == 0.0 ? "" : Double.toString(task.getMaxGrade())) ;
+        maxGradeTextField.setPromptText("Максимальная оценка");
         DatePicker newDeadlineDatePicker = new DatePicker(task.getDeadline());
         TextArea descriptionTextArea = new TextArea(task.getDescription());
         CheckBox completedCheckBox = new CheckBox("Выполнено");
         completedCheckBox.setSelected(task.isCompleted());
+
+        maxGradeTextField.setPrefWidth(240);
+        maxGradeTextField.setMaxWidth(240);
+
+        newDeadlineDatePicker.setPrefWidth(240);
+        newDeadlineDatePicker.setMaxWidth(240);
     
         // Поля для комментария, оценки и даты выполнения
         Label commentLabel = new Label("Комментарий к выполнению:");
@@ -186,17 +235,26 @@ public class TaskManagerApp extends Application {
         commentTextField.setPromptText("Комментарий к выполнению");
         commentLabel.setVisible(task.isCompleted());
         commentTextField.setVisible(task.isCompleted());
+
+        commentTextField.setPrefWidth(240);
+        commentTextField.setMaxWidth(240);
     
         Label completionDateLabel = new Label("Дата выполнения:");
         DatePicker completionDatePicker = new DatePicker(task.getCompletionDate());
         completionDateLabel.setVisible(task.isCompleted());
         completionDatePicker.setVisible(task.isCompleted());
+
+        completionDatePicker.setPrefWidth(240);
+        completionDatePicker.setMaxWidth(240);
     
         Label gradeLabel = new Label("Оценка:");
         TextField gradeTextField = new TextField(task.getGrade() == 0.0 ? "" : Double.toString(task.getGrade()));
         gradeTextField.setPromptText("Оценка");
         gradeLabel.setVisible(task.isCompleted());
         gradeTextField.setVisible(task.isCompleted());
+
+        gradeTextField.setPrefWidth(240);
+        gradeTextField.setMaxWidth(240);
     
         completedCheckBox.setOnAction(event -> {
             boolean isChecked = completedCheckBox.isSelected();
@@ -207,30 +265,56 @@ public class TaskManagerApp extends Application {
             gradeLabel.setVisible(isChecked);
             gradeTextField.setVisible(isChecked);
         });
+
+        Button removeButton = new Button("Удалить");
+        removeButton.setPrefWidth(118);
+        removeButton.setMaxWidth(118);
+        removeButton.setOnAction(e -> {
+            detailsStage.close();
+            removeTask();
+        });
     
-        Button saveButton = new Button("Сохранить!");
+        Button saveButton = new Button("Сохранить");
+        saveButton.setPrefWidth(118);
+        saveButton.setMaxWidth(118);
         saveButton.setOnAction(event -> {
             task.setName(nameTextField.getText());
+            task.setMaxGrade(maxGradeTextField.getText() == "" ? -1.0 : Double.parseDouble(maxGradeTextField.getText()) );
             task.setDescription(descriptionTextArea.getText());
             task.setCompleted(completedCheckBox.isSelected());
             task.setComment(commentTextField.getText());
             LocalDate newDeadline = newDeadlineDatePicker.getValue();
+
+            messageTextField.setText("");
+            messageTextField.setStyle("-fx-text-fill: red;");
+
+            if (task.getName().isEmpty()) {
+                messageTextField.setText("Ошибка! Не введено имя задания");
+                return;
+            }
+
+            if (task.getMaxGrade() < 0.0) {
+                messageTextField.setText("Ошибка! Неверно введена максимальная оценка");
+                return;
+            }
+
             if (newDeadline != null && !newDeadline.equals(task.getDeadline())) {
                 task.setDeadline(newDeadline);
             }
+
             if (completedCheckBox.isSelected()) {
                 task.setCompletionDate(completionDatePicker.getValue());
-                task.setGrade(Double.parseDouble(gradeTextField.getText()));
+                
+                double newGradeF = gradeTextField.getText() == "" ? -1.0 : Double.parseDouble(gradeTextField.getText() );
+                task.setGrade(newGradeF);
 
-                if (descriptionTextArea.getText().equals("") ) {
+                if (completionDatePicker.getValue() == null ) {
+                    messageTextField.setText("Ошибка! Неверно введена дата выполнения");
                     return;
                 }
     
-                if (commentTextField.getText().equals("") ) {
-                    return;
-                }
-    
-                if (gradeTextField.getText().equals("") ) {
+                if (newGradeF < 0.0 ) {
+                    messageTextField.setText("Ошибка! Неверно введена оценка");
                     return;
                 }
 
@@ -241,23 +325,29 @@ public class TaskManagerApp extends Application {
                 task.setComment("");
             }
 
+            messageTextField.setStyle("-fx-text-fill: green;");
+
             saveTaskManager();
             taskListView.refresh();
             detailsStage.close();
         });
     
+        HBox buttons = new HBox(5);
+        buttons.getChildren().addAll(saveButton, removeButton);
+
         detailsBox.getChildren().addAll(
             new Label("Название:"), nameTextField,
-            new Label("Срок выполнения:"), newDeadlineDatePicker,
             new Label("Описание:"), descriptionTextArea,
+            new Label("Срок выполнения:"), newDeadlineDatePicker,
+            new Label("Максимальная оценка:"), maxGradeTextField,
             completedCheckBox,
-            commentLabel, commentTextField,
-            completionDateLabel, completionDatePicker,
             gradeLabel, gradeTextField,
-            saveButton
+            completionDateLabel, completionDatePicker,
+            commentLabel, commentTextField,
+            buttons
         );
     
-        Scene detailsScene = new Scene(detailsBox, 300, 500);
+        Scene detailsScene = new Scene(detailsBox, 400, 600);
         detailsStage.setScene(detailsScene);
         detailsStage.showAndWait();
     }
